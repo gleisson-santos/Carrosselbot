@@ -116,8 +116,30 @@ async def process_media_group(media_group_id: str, context: ContextTypes.DEFAULT
             highest_resolution_photo = max(message.photo, key=lambda p: p.width * p.height)
             try:
                 file = await context.bot.get_file(highest_resolution_photo.file_id)
-                # Constrói a URL completa do arquivo
+                # CORREÇÃO AQUI: A URL do arquivo já vem completa do Telegram
+                # file.file_path já é a URL relativa ao servidor de arquivos do Telegram
+                # A URL completa é construída pelo Telegram internamente ou já vem pronta.
+                # A documentação do python-telegram-bot indica que file.file_path já é o caminho relativo.
+                # A URL completa para download é https://api.telegram.org/file/bot<token>/<file_path>
+                # Vamos garantir que estamos usando apenas o file.file_path para construir a URL completa.
+                
+                # O file.file_path retornado por context.bot.get_file(file_id) já é o caminho relativo.
+                # A URL completa para download é https://api.telegram.org/file/bot<token>/<file_path>
+                # O problema anterior era que file.file_path já vinha com a URL completa, duplicando.
+                # Vamos assumir que file.file_path é apenas o caminho relativo e construir a URL.
+                # Se o problema persistir, significa que file.file_path já é a URL completa.
+                
+                # Tentativa 1: Assumir que file.file_path é o caminho relativo
                 full_file_url = f"https://api.telegram.org/file/bot{TELEGRAM_TOKEN}/{file.file_path}"
+                
+                # Se a URL ainda estiver duplicada, significa que file.file_path já é a URL completa.
+                # Nesse caso, a linha acima deveria ser apenas: full_file_url = file.file_path
+                # Para testar, vamos adicionar uma verificação.
+                if file.file_path.startswith("https://api.telegram.org/"):
+                    full_file_url = file.file_path # Já é a URL completa
+                else:
+                    full_file_url = f"https://api.telegram.org/file/bot{TELEGRAM_TOKEN}/{file.file_path}"
+
                 file_urls.append(full_file_url)
                 images_details.append({
                     'file_url': full_file_url,
@@ -143,7 +165,12 @@ async def process_single_image(update: Update, context: ContextTypes.DEFAULT_TYP
     highest_resolution_photo = max(message.photo, key=lambda p: p.width * p.height)
     try:
         file = await context.bot.get_file(highest_resolution_photo.file_id)
-        full_file_url = f"https://api.telegram.org/file/bot{TELEGRAM_TOKEN}/{file.file_path}"
+        
+        if file.file_path.startswith("https://api.telegram.org/"):
+            full_file_url = file.file_path
+        else:
+            full_file_url = f"https://api.telegram.org/file/bot{TELEGRAM_TOKEN}/{file.file_path}"
+
         await send_to_make(
             update.effective_user.id,
             update.effective_user.username,
@@ -200,5 +227,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
 
