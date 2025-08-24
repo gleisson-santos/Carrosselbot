@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
 from threading import Thread
-from telegram import Update
+from telegram import Update, InputMediaPhoto
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from collections import defaultdict
 import asyncio
@@ -75,14 +75,14 @@ class WebhookHandler(BaseHTTPRequestHandler):
             self.send_response(404)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps({"status": "error", "message": "Endpoint não encontrado"}).encode('utf-8'))
+            self.wfile.write(json.dumps({"status": "error", "message": "Endpoint não encontrado"}).encode("utf-8"))
             return
 
         try:
             # Lê o corpo da requisição
-            content_length = int(self.headers['Content-Length'])
+            content_length = int(self.headers["Content-Length"])
             post_data = self.rfile.read(content_length)
-            data = json.loads(post_data.decode('utf-8'))
+            data = json.loads(post_data.decode("utf-8"))
 
             # Verifica se é uma lista de URLs (carrossel) ou uma única URL
             if "file_urls" in data:
@@ -97,7 +97,6 @@ class WebhookHandler(BaseHTTPRequestHandler):
                 loop = asyncio.get_event_loop()
                 
                 # Prepara a lista de InputMediaPhoto para o carrossel
-                from telegram import InputMediaPhoto
                 media_list = []
                 for i, url in enumerate(file_urls):
                     if i == 0:
@@ -135,21 +134,21 @@ class WebhookHandler(BaseHTTPRequestHandler):
                 self.send_response(400)
                 self.send_header("Content-Type", "application/json")
                 self.end_headers()
-                self.wfile.write(json.dumps({"status": "error", "message": "file_url ou file_urls não fornecido"}).encode('utf-8'))
+                self.wfile.write(json.dumps({"status": "error", "message": "file_url ou file_urls não fornecido"}).encode("utf-8"))
                 return
 
             # Responde com sucesso
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps({"status": "success", "message": "Mídia enviada ao canal"}).encode('utf-8'))
+            self.wfile.write(json.dumps({"status": "success", "message": "Mídia enviada ao canal"}).encode("utf-8"))
 
         except Exception as e:
             logger.error("Erro ao processar requisição do Make.com: %s", str(e))
             self.send_response(500)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))
+            self.wfile.write(json.dumps({"status": "error", "message": str(e)}).encode("utf-8"))
 
 # Função para rodar o servidor HTTP em uma thread separada
 def run_http_server():
@@ -180,8 +179,8 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     source_chat_name = ""
     source_chat_id = ""
     # Verifica se a mensagem foi encaminhada usando forward_date ou forward_from
-    if hasattr(message, 'forward_date') and message.forward_date:
-        if hasattr(message, 'forward_from_chat') and message.forward_from_chat:
+    if hasattr(message, "forward_date") and message.forward_date:
+        if hasattr(message, "forward_from_chat") and message.forward_from_chat:
             source_chat_name = message.forward_from_chat.title if message.forward_from_chat.title else (message.forward_from_chat.username or "Chat Desconhecido")
             source_chat_id = str(message.forward_from_chat.id)
             logger.info("Mensagem encaminhada - Chat de Origem - Nome: %s, ID: %s", source_chat_name, source_chat_id)
@@ -237,10 +236,10 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             file_url = file.file_path
             
             selected_images.append({
-                'file_url': file_url,
-                'width': highest_resolution_photo.width,
-                'height': highest_resolution_photo.height,
-                'file_size': highest_resolution_photo.file_size
+                "file_url": file_url,
+                "width": highest_resolution_photo.width,
+                "height": highest_resolution_photo.height,
+                "file_size": highest_resolution_photo.file_size
             })
             
             # Usa os metadados da primeira imagem para o caption e origem
@@ -295,7 +294,7 @@ async def process_single_image(update: Update, context: ContextTypes.DEFAULT_TYP
 async def process_carousel_images(selected_images: list, update: Update, context: ContextTypes.DEFAULT_TYPE, caption: str, source_chat_name: str, source_chat_id: str) -> None:
     try:
         # Extrai apenas as URLs das imagens
-        file_urls = [img['file_url'] for img in selected_images]
+        file_urls = [img["file_url"] for img in selected_images]
         
         # Envia os dados para o Make.com no novo formato de carrossel
         await send_carousel_to_make(file_urls, selected_images, update, context, caption, source_chat_name, source_chat_id)
@@ -371,14 +370,13 @@ def main() -> None:
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     application.add_error_handler(error_handler)
 
-    # Inicia o servidor HTTP em uma thread separada
-    http_thread = Thread(target=run_http_server)
-    http_thread.start()
-
     logger.info("Bot iniciado, aguardando mensagens...")
     # Inicia o bot do Telegram
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
+    # Inicia o servidor HTTP em uma thread separada
+    http_thread = Thread(target=run_http_server)
+    http_thread.start()
     main()
 
