@@ -111,10 +111,11 @@ async def process_single_image(update: Update, context: ContextTypes.DEFAULT_TYP
             full_file_url = f"https://api.telegram.org/file/bot{TELEGRAM_TOKEN}/{file.file_path}"
         
         await send_to_make(message, [full_file_url], [{
-            'file_url': full_file_url,
+            'image_url': full_file_url,
             'width': photo.width,
             'height': photo.height,
             'file_size': photo.file_size
+            'media_type': 'IMAGE'
         }], message.caption or "")
     except Exception as e:
         logger.error(f"Erro ao processar imagem única: {e}")
