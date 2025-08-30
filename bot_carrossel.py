@@ -91,7 +91,9 @@ async def process_media_group(media_group_id: str, context: ContextTypes.DEFAULT
                     'file_url': full_file_url,
                     'width': photo.width,
                     'height': photo.height,
-                    'file_size': photo.file_size
+                    'file_size': photo.file_size,
+                    'media_type': 'IMAGE'
+                    
                 })
             except Exception as e:
                 logger.error(f"Erro ao obter arquivo da imagem {photo.file_id}: {e}")
