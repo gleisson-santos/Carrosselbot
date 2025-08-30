@@ -88,7 +88,7 @@ async def process_media_group(media_group_id: str, context: ContextTypes.DEFAULT
 
                 file_urls.append(full_file_url)
                 images_details.append({
-                    'file_url': full_file_url,
+                    'image_url': full_file_url,
                     'width': photo.width,
                     'height': photo.height,
                     'file_size': photo.file_size,
