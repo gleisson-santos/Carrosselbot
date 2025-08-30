@@ -114,7 +114,7 @@ async def process_single_image(update: Update, context: ContextTypes.DEFAULT_TYP
             'image_url': full_file_url,
             'width': photo.width,
             'height': photo.height,
-            'file_size': photo.file_size
+            'file_size': photo.file_size,
             'media_type': 'IMAGE'
         }], message.caption or "")
     except Exception as e:
